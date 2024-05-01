@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title id="page-title">的Blog</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/kudaompq.css">
+    <link rel="stylesheet" href="css/custom.css">
+
+    <!--    圖標的cdn-->
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        function displayArticles(articles) {
+            let articlesHtml = '';
+            if (articles.length === 0) {
+                articlesHtml = '<div class="article-index shadow-small"><p>目前沒有任何文章。</p></div>';
+            } else {
+                $.each(articles, function(index, article) {
+                    const maxSummaryLength = 100;  // 最大摘要長度
+                    let summary = article.summary;
+                    if (summary.length > maxSummaryLength) {
+                        summary = summary.substring(0, maxSummaryLength) + '...';  // 截斷並添加省略號
+                    }
+
+                    articlesHtml += '<div class="article-index shadow-small">';
+                    articlesHtml += '    <div class="font-size-article-header">' + article.title + '</div>';
+                    articlesHtml += '    <div class="article-index-tags">';
+                    articlesHtml += '        <span class="article-author">作者：' + article.username + '</span>';
+                    articlesHtml += '        <span class="article-date">' + new Date(article.createDate).toLocaleDateString() + '</span>';
+                    articlesHtml += '    </div>';
+                    articlesHtml += '    <div class="article-index-content">';
+                    articlesHtml += '        <p>' + summary + '</p>';
+                    articlesHtml += '        <div class="read-more cl-effect-14">';
+                    articlesHtml += '            <a href="article_display.html?aid=' + article.aid + '" class="more-link">繼續閱讀 <span class="meta-nav">→</span></a>';
+                    articlesHtml += '        </div>';
+                    articlesHtml += '    </div>';
+                    articlesHtml += '</div>';
+                });
+            }
+            $('.list-group').html(articlesHtml);
+        }
+    </script>
+    <script>
+        function loadArticles(pageNum) {
+            $.ajax({
+                url: '/articles/getAllList',
+                type: 'GET',
+                data: { page: pageNum },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 200 && response.result) {
+                        displayArticles(response.result.list);
+                        createPagination(response.result.totalCount, pageNum);
+                    } else {
+                        alert('文章列表加載失敗');
+                    }
+                },
+                error: function() {
+                    alert('無法加載文章列表');
+                }
+            });
+        }
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 默認加載第一頁
+
+
+            loadArticles(1);
+
+
+
+        });
+    </script>
+    <script>
+
+        function createPagination(totalCount, currentPage) {
+            const totalPages = Math.ceil(totalCount / 4); // 每頁4篇文章
+            let paginationHtml = '<ul class="pagination">';
+            const maxPagesToShow = 5; // 最多顯示5個分頁按鈕
+            const halfWindow = Math.floor(maxPagesToShow / 2);
+
+            let startPage = Math.max(currentPage - halfWindow, 1);
+            let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+            if (endPage - startPage < maxPagesToShow - 1) {
+                startPage = Math.max(endPage - maxPagesToShow + 1, 1);
+            }
+
+            if (currentPage > 1) {
+                paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="loadArticles(${currentPage - 1})">上一頁</a></li>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="loadArticles(${i})">${i}</a></li>`;
+            }
+
+            if (currentPage < totalPages) {
+                paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="loadArticles(${currentPage + 1})">下一頁</a></li>`;
+            }
+
+            paginationHtml += '</ul>';
+            $('.pagination').html(paginationHtml);
+        }
+
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 加載個人文章
+            loadPersonalArticles();
+
+            // ...其他程式碼...
+        });
+
+        function loadPersonalArticles() {
+            $.ajax({
+                url: '/articles/getListByAuthorId',  // 控制器的URL
+                type: 'GET',
+                dataType: 'json',  // 期望返回的數據類型
+                success: function(response) {
+                    if(response.status === 200 && response.result) {
+                        var personalArticlesHtml = '';
+                        $.each(response.result, function(index, article) {
+                            personalArticlesHtml += '<li><a href="article_display.html?aid=' + article.aid + '&editable=true">' + article.title + '</a></li>';
+
+                        });
+                        $('#personal-articles').html(personalArticlesHtml);
+                    } else {
+                        // 處理錯誤或空結果
+                        console.log('個人文章列表加載失敗');
+                    }
+                },
+                error: function() {
+                    console.log('無法加載個人文章列表');
+                }
+            });
+        }
+
+        // ...其他程式碼和函數...
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 加載用戶信息
+            loadUserInfo();
+
+            // ...其他已存在的AJAX請求程式碼...
+        });
+
+        function loadUserInfo() {
+            $.ajax({
+                url: '/users/info',  // 控制器的URL
+                type: 'GET',
+                dataType: 'json',  // 期望返回的數據類型
+                success: function(response) {
+                    if(response.status === 200 && response.result) {
+                        var userInfo = response.result;
+                        $('#user-avatar').attr('src', '/images/' + userInfo.avatar);
+                        $('#username').text(userInfo.username);
+                        $('#num-of-articles').text(userInfo.numberOfArticle);
+                        $('#page-title').text(userInfo.username + "的Blog");
+                        $('#navbar-brand').text(userInfo.username + "的Blog");
+                        var currentYear = new Date().getFullYear();
+                        var registrationYear = new Date(userInfo.registrationDate).getFullYear();
+                        $('.footer-copyright').text('©' + registrationYear + ' - ' + currentYear + ' By ' + userInfo.username);
+                    } else {
+                        // 處理錯誤或空結果
+                        console.log('用戶信息加載失敗');
+                    }
+                },
+                error: function() {
+                    console.log('無法加載用戶信息');
+                }
+            });
+        }
+    </script>
+    <style>
+        .bar-list li::before {
+            content: "\f0a9";  /* 使用合適的圖標程式碼 */
+            font-family: 'FontAwesome';
+            padding-right: 5px;
+        }
+        .article-index {
+            padding: 15px; /* 減少填充 */
+            margin-bottom: 20px; /* 增加底部間距 */
+            box-shadow: 0 2px 5px rgba(0,0,0,.1); /* 細化陰影效果 */
+        }
+        .article-index-content p {
+            margin-bottom: 10px; /* 減少段落間距 */
+        }
+
+        .read-more {
+            padding-top: 5px; /* 調整繼續閱讀鏈接的頂部間距 */
+        }
+    </style>
+</head>
+<body>
+<div class="container margin-b-lg">
+    <nav class="navbar navbar-expand-md navbar-light bg-light border-bottom">
+        <!-- logo -->
+        <h1><a id="navbar-brand" class="navbar-brand text-dark font-size-bg" href="#"></a></h1>
+        <!-- 當屏幕小的時候自動收縮導航欄改用下拉列表 -->
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#headerNavbar">
+            <i class="fa fa-bars"></i>
+        </button>
+        <!-- Navbar links -->
+        <div class="collapse navbar-collapse justify-content-end" id="headerNavbar">
+            <ul class="navbar-nav font-size-lg">
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="blog.html">首頁</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="article_display.html?editable=true">關於我</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="#" onclick="logout(); return false;">登出</a>
+                </li>
+
+
+            </ul>
+        </div>
+    </nav>
+</div>
+<div class="container margin-b-lg">
+    <div class="row">
+        <!--    Blog列表-->
+        <div class="col-sm-9">
+            <div class="article-body shadow-small">
+                <div class="col-md-9">
+                    <!-- 文章列表，假設有4篇文章 -->
+                    <div class="list-group">
+                        <!-- 文章1 -->
+                        <a href="article_full_view.html" class="list-group-item list-group-item-action flex-column align-items-start">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">文章標題 1</h5>
+                                <small>文章創建日期</small>
+                            </div>
+                            <p class="mb-1">文章摘要...</p>
+                            <small>文章作者</small>
+                        </a>
+                        <!-- 後續文章類似，覆制上面的程式碼塊並更改標題、日期、摘要和作者 -->
+                    </div>
+                </div>
+                <div class="col-sm-9 text-center">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            <!-- Pagination will be loaded here -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+        <!--  bar  -->
+        <div class="col-sm-3">
+            <div class="bar shadow-small text-center">
+                <img src="" id="user-avatar" class="rounded-circle" alt="用戶頭像" style="width: 110px">
+                <div class="author-info-name margin-tb-normal" id="username">用戶名</div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div>文章</div>
+                        <div id="num-of-articles">0</div>
+                    </div>
+                </div>
+            </div>
+            <!-- 最新文章-->
+            <!-- 個人文章 -->
+            <div class="bar shadow-small">
+                <h3 class="bar-title">個人文章</h3>
+                <ul class="bar-list" id="personal-articles">
+                    <!-- 這里的內容將通過JavaScript動態生成 -->
+                </ul>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!--footer-->
+    <div class="container footer">
+        <div class="row">
+            <div class="col-sm-12 text-center margin-tb-large">
+                <p class="footer-copyright"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            // 创建一个AJAX请求
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/users/logOut", true); // 假设登出的URL是 `/logout`
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+            // 设置请求完成后的处理
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    // 请求成功后的处理，比如跳转到登录页或显示登出成功
+                    console.log('Logged out successfully');
+                    window.location.href = '/login'; // 重定向到登录页面
+                } else {
+                    // 处理错误情况
+                    console.error('Logout failed');
+                }
+            };
+
+            // 发送请求
+            xhr.send();
+        }
+    </script>
+
+
+
+
+
+
+    <script src="js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

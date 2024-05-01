@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.blog.mapper.ArticleMapper">
+    <select id="getAllCount">
+        select count(*) from articles where is_deleted = 0
+    </select>
+
+    <select id="getAllList" resultType="com.example.blog.dto.ArticleUserInfo">
+        select aid,create_date,title,username,summary from articles a left join users u on a.author_id = u.uid where is_deleted = 0 order by a.create_date desc limit #{pagenum},4
+    </select>
+
+    <select id="getListByAuthorId" resultType="com.example.blog.pojo.Article">
+        select aid,title from articles where is_deleted = 0 and author_id = #{authorId} order by create_date desc
+    </select>
+
+
+    <select id="getArtDisplayByAid" resultType="com.example.blog.dto.ArticleDisplay">
+        select a.create_date,a.title,u.username,a.content,a.summary from articles a left join users u on a.author_id = u.uid where a.aid = #{aid} and a.is_deleted = 0
+    </select>
+    <update id="updateArticleByAid" >
+        update articles set title = #{article.title},summary = #{article.summary},content = #{article.content} where aid = #{article.aid} and author_id = #{uid} and is_deleted = 0
+    </update>
+
+    <insert id="insertArticle">
+        insert into articles (create_date,title,author_id,content,summary) values (#{createDate},#{title},#{authorId},#{content},#{summary})
+    </insert>
+    <update id="dropArticleByAid">
+        update articles set is_deleted = 1 where aid = #{aid} and author_id = #{uid}
+    </update>
+
+</mapper>

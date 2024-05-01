@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.blog.mapper.UserMapper">
+
+    <select id="selectByUserName" resultType="com.example.blog.pojo.User">
+        select * from users where username = #{username}
+    </select>
+
+    <insert id="addUser">
+        insert into users (username,password,email,registration_date,last_login) values (#{username},#{password},#{email},#{registrationDate},#{lastLogin})
+    </insert>
+
+    <update id="updateLastLogin">
+        update users set last_login = #{lastLogin} where username = #{username}
+    </update>
+
+    <select id="getInfoAndCount" resultType="com.example.blog.dto.UserWithNumOfArt">
+        select u.avatar,u.username,u.email,u.registration_date,COUNT(a.author_id) numberOfArticle from users u left join articles a on u.uid = a.author_id and a.is_deleted = 0 where u.uid = #{uid}
+    </select>
+
+    <update id="updateEmailByUid">
+        update users set email = #{email} where uid = #{uid}
+    </update>
+
+
+    <select id="getOldPWD">
+        select password from users where uid = #{uid}
+    </select>
+
+    <update id="updatePWDByUid">
+        update users set password = #{password} where uid = #{uid}
+    </update>
+
+    <update id="uploadAvatar">
+        update users set avatar = #{avatar} where uid = #{uid}
+    </update>
+
+</mapper>

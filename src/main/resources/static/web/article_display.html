@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title></title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/kudaompq.css">
+    <link rel="stylesheet" href="css/custom.css">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
+
+
+    <script>
+        $(document).ready(function() {
+            var editable = new URLSearchParams(window.location.search).get('editable');
+            loadUserInfo();
+
+            // 如果 editable 參數為 true，則顯示上傳圖標
+            if (editable === 'true') {
+                $('#upload-avatar-icon').show();
+            } else {
+                $('#upload-avatar-icon').hide();
+            }
+
+            // 點擊上傳圖標時，觸發隱藏的文件輸入點擊事件
+            $('#upload-avatar-icon').click(function() {
+                $('#avatarInput').click();
+            });
+
+            // 處理文件選擇後的事件
+            $('#avatarInput').change(function() {
+                // 文件上傳的 AJAX 調用和其他邏輯...
+            });
+            function loadUserInfo() {
+                $.ajax({
+                    url: '/users/info',  // 控制器的URL
+                    type: 'GET',
+                    dataType: 'json',  // 期望返回的數據類型
+                    success: function(response) {
+                        if(response.status === 200 && response.result) {
+                            var userInfo = response.result;
+                            $('#user-avatar').attr('src', '/images/' + userInfo.avatar);
+                            $('#username').text(userInfo.username);
+                            $('#num-of-articles').text(userInfo.numberOfArticle);
+                            $('#page-title').text("文章展示-" + userInfo.username + "的Blog");
+                            $('#navbar-brand').text(userInfo.username + "的Blog");
+                            var currentYear = new Date().getFullYear();
+                            var registrationYear = new Date(userInfo.registrationDate).getFullYear();
+                            $('.footer-copyright').text('©' + registrationYear + ' - ' + currentYear + ' By ' + userInfo.username);
+                        } else {
+                            console.log('用戶信息加載失敗');
+                        }
+                    },
+                    error: function() {
+                        console.log('無法加載用戶信息');
+                    }
+                });
+            }
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            var aid = new URLSearchParams(window.location.search).get('aid'); // 獲取URL中的文章ID
+            if (aid) {
+                loadArticleDetails(aid);
+            }
+
+            function loadArticleDetails(articleId) {
+                $.ajax({
+                    url: '/articles/details/' + articleId, // 控制器的URL需要按實際情況修改
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 200 && response.result) {
+                            var article = response.result;
+                            $('.article-title').text(article.title);
+                            $('.article-author').text('作者：' + article.username);
+                            $('.article-date').text('發布時間：' + formatDate(new Date(article.createDate)));
+                            $('.article-body').html(article.content);
+                        } else {
+
+                        }
+                    },
+                    error: function() {
+                        alert('無法加載文章');
+                    }
+                });
+                function formatDate(date) {
+                    var d = new Date(date);
+                    return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+                }
+            }
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            var aid = new URLSearchParams(window.location.search).get('aid');
+            var editable = new URLSearchParams(window.location.search).get('editable');
+            if (aid) {
+                loadArticleDetails(aid, editable);
+            }
+
+            // ...其它程式碼...
+        });
+
+        function loadArticleDetails(articleId, editable) {
+            // ...AJAX調用和其他程式碼...
+
+            if (editable === 'true') {
+                // 使用 Font Awesome 圖標的按鈕 HTML
+                var buttonsHtml = '<button class="btn btn-outline-primary btn-sm edit-button" data-article-id="' + articleId + '"><i class="fa fa-edit"></i></button>' +
+                    '<button class="btn btn-outline-danger btn-sm"><i class="fa fa-trash"></i></button>';
+                // 添加按鈕到文章操作容器
+                $('.article-actions').html(buttonsHtml);
+            }
+        }
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 其他初始化程式碼...
+
+            // 綁定點擊事件到編輯按鈕
+            $('.article-actions').on('click', '.btn-outline-primary', function() {
+                var articleId = $(this).data('article-id'); // 從按鈕獲取文章ID
+
+                // 通過 AJAX 獲取文章數據
+                $.ajax({
+                    url: '/articles/details/' + articleId,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        // 填充模態框表單數據
+                        if (response.status === 200 && response.result) {
+                            $('#articleTitle').val(response.result.title);
+                            $('#articleSummary').val(response.result.summary);
+                            $('#articleContent').val(response.result.content);
+                        } else {
+                            // 處理錯誤，例如顯示通知
+                        }
+                        // 顯示模態框
+                        $('#editModal').modal('show');
+                    },
+                    error: function() {
+                        alert('無法加載文章數據');
+                    }
+                });
+            });
+
+            // 綁定保存按鈕事件，用於提交表單數據
+            // ...
+        });
+
+    </script>
+    <script>
+        $(document).ready(function() {
+            $('#saveChanges').click(function() {
+                // 從瀏覽器地址欄獲取文章ID
+                var articleId = new URLSearchParams(window.location.search).get('aid');
+
+                var articleData = {
+                    aid: articleId,  // 確保包含文章ID
+                    title: $('#articleTitle').val(),
+                    summary: $('#articleSummary').val(),
+                    content: $('#articleContent').val()
+                };
+
+                // 發送AJAX請求到後端
+                $.ajax({
+                    url: '/articles/update/' + articleId, // 使用路徑參數發送文章ID
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(articleData), // 發送JSON格式的數據
+                    success: function(response) {
+                        if (response.status === 200) {
+                            alert('文章更新成功！');
+                            $('#editModal').modal('hide'); // 關閉模態框
+                            window.location.reload();
+                        } else {
+                            alert('文章更新失敗：' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('更新文章時發生錯誤，請重試。');
+                    }
+                });
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 綁定點擊事件到新增文章按鈕
+            setTimeout(function() {
+                // 清除可能存在的舊事件綁定
+                $('#addArticleButton').on('click', function() {
+                    // 清空模態框的所有輸入欄位
+                    $('#articleTitle').val('');
+                    $('#articleSummary').val('');
+                    $('#articleContent').val('');
+
+                    // 顯示模態框
+                    $('#editModal').modal('show');
+                });
+            }, 100);
+
+            // 綁定保存按鈕事件，用於提交新文章
+            $('#saveChanges').off().click(function() {
+                // 數據收集與非空檢查
+                var title = $('#articleTitle').val();
+                var summary = $('#articleSummary').val();
+                var content = $('#articleContent').val();
+
+                if (!title.trim() || !summary.trim() || !content.trim()) {
+                    alert('所有欄位均不得為空！');
+                    return;
+                }
+
+                var articleData = {
+                    title: title,
+                    summary: summary,
+                    content: content
+                };
+
+                // 發送AJAX請求到後端創建新文章
+                $.ajax({
+                    url: '/articles/create',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(articleData),
+                    success: function(response) {
+                        if (response.status === 200) {
+                            alert('文章新增成功！');
+                            $('#editModal').modal('hide');
+                            window.location.reload();
+                        } else {
+                            alert('文章新增失敗：' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('新增文章時發生錯誤，請重試。');
+                    }
+                });
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            // 加載個人文章
+            loadPersonalArticles();
+
+            // ...其他程式碼...
+        });
+
+        function loadPersonalArticles() {
+            $.ajax({
+                url: '/articles/getListByAuthorId',  // 控制器的URL
+                type: 'GET',
+                dataType: 'json',  // 期望返回的數據類型
+                success: function(response) {
+                    if(response.status === 200 && response.result) {
+                        var personalArticlesHtml = '';
+                        $.each(response.result, function(index, article) {
+                            personalArticlesHtml += '<li><a href="article_display.html?aid=' + article.aid + '&editable=true">' + article.title + '</a></li>';
+
+                        });
+                        $('#personal-articles').html(personalArticlesHtml);
+                    } else {
+                        // 處理錯誤或空結果
+                        console.log('個人文章列表加載失敗');
+                    }
+                },
+                error: function() {
+                    console.log('無法加載個人文章列表');
+                }
+            });
+        }
+
+        // ...其他程式碼和函數...
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 綁定點擊事件到動態生成的刪除按鈕
+            $('.article-actions').on('click', '.btn-outline-danger', function() {
+                var articleId = new URLSearchParams(window.location.search).get('aid');
+
+                if (confirm('您確定要刪除這篇文章嗎？')) {
+                    $.ajax({
+                        url: '/articles/delete/' + articleId, // 控制器的URL
+                        type: 'POST', // 通常刪除操作使用 POST 或 DELETE 請求
+                        success: function(response) {
+                            if (response.status === 200) {
+                                alert('文章已成功刪除！');
+                                window.location.reload(); // 刪除成功後刷新頁面
+                            } else {
+                                alert('刪除文章失敗：' + response.message);
+                            }
+                        },
+                        error: function() {
+                            alert('刪除文章時發生錯誤，請重試。');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 綁定郵箱更新點擊事件
+            $('#emailUpdate').click(function() {
+                $.ajax({
+                    url: '/users/info',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(result) {
+                        console.log(result);
+                        if (result.status === 200 && result.result && result.result.email) {
+                            $('#email').val(result.result.email); // 修改這裡的路徑
+                            $('#emailModal').modal('show');
+                        } else {
+                            alert('無法獲取用戶信息');
+                        }
+                    },
+                    error: function() {
+                        alert('請求失敗');
+                    }
+                });
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 郵箱表單提交事件綁定
+            $('#emailForm').submit(function(event) {
+                event.preventDefault(); // 阻止表單的默認提交行為
+
+                var updatedEmail = $('#email').val(); // 從輸入框獲取新的郵箱地址
+                // 簡單的輸入驗證
+                if(!updatedEmail || !validateEmail(updatedEmail)) {
+                    alert('請輸入有效的郵箱地址。');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/users/update/email', // 假設這是更新郵箱的後端路徑
+                    type: 'POST',
+                    contentType: 'text/plain',
+                    data: updatedEmail,
+                    success: function(response) {
+                        if(response.status === 200) {
+                            alert('郵箱更新成功！');
+                            $('#emailModal').modal('hide'); // 隱藏模態框
+                        } else {
+                            alert('郵箱更新失敗：' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('更新郵箱時發生錯誤，請重試。');
+                    }
+                });
+            });
+        });
+
+        // 郵箱格式驗證函數
+        function validateEmail(email) {
+            var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
+    </script>
+    <script>
+        $(document).ready(function() {
+            // 密碼表單提交事件綁定
+            $('#passwordForm').submit(function(event) {
+                event.preventDefault(); // 阻止表單的默認提交行為
+
+                var oldPassword = $('#oldPassword').val();
+                var newPassword = $('#newPassword').val();
+                var confirmPassword = $('#confirmPassword').val();
+
+                // 基本的輸入驗證
+                if(!oldPassword || !newPassword || !confirmPassword) {
+                    alert('所有欄位均不得為空！');
+                    return;
+                }
+
+                if(newPassword !== confirmPassword) {
+                    alert('新密碼和確認密碼不匹配。');
+                    return;
+                }
+
+                // 這裡使用序列化表單數據的方式發送 AJAX 請求
+                $.ajax({
+                    url: '/users/update/password', // 根據您的路由結構調整 URL
+                    type: 'POST',
+                    data: {
+                        oldPassword, // 舊密碼
+                        newPassword  // 新密碼
+                    },
+                    success: function(response) {
+                        // 此處假定後端返回的是一個對象，其中包含狀態碼和信息
+                        if(response.status === 200) {
+                            alert('密碼更新成功！');
+                            $('#passwordModal').modal('hide'); // 隱藏模態框
+                            // 可能需要清除表單
+                            $('#passwordForm')[0].reset();
+                        } else {
+                            alert('密碼更新失敗：' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('更新密碼時發生錯誤，請重試。');
+                    }
+                });
+            });
+        });
+    </script>
+
+
+
+
+    <style>
+        .article-actions {
+            position: absolute;
+            right: 0;
+            top: 0;
+            padding: 10px;
+        }
+
+        .article-actions button {
+            border: none;
+            background: none;
+        }
+
+        .article-actions .btn-outline-primary {
+            color: #6c757d; /* 更柔和的藍色 */
+        }
+
+        .article-actions .btn-outline-danger {
+            color: #6c757d; /* 更柔和的紅色 */
+        }
+
+        .article-actions .btn:hover {
+            background-color: #f8f9fa; /* 鼠標懸停時的背景色 */
+        }
+        .article {
+            position: relative;
+        }
+        .dropdown-menu {
+            display: none; /* 初始不顯示下拉菜單 */
+            opacity: 0; /* 透明度設為 0 */
+            transition: opacity 0.5s ease, transform 0.5s ease; /* 過渡效果 */
+            transform: translateY(-20px); /* 初始位置稍微向上，為了展開效果 */
+        }
+
+        /* 滑鼠懸停時的樣式 */
+        .nav-item.dropdown:hover .dropdown-menu {
+            display: block; /* 顯示下拉菜單 */
+            opacity: 1; /* 透明度變為完全不透明 */
+            transform: translateY(0); /* 位置恢復到原位 */
+        }
+
+        /* 使下拉菜單內容可見 */
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+
+
+
+
+
+
+<!-- 密碼更新模態框 -->
+<div class="modal fade" id="passwordModal" tabindex="-1" role="dialog" aria-labelledby="passwordModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="passwordModalLabel">更新密碼</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label for="oldPassword">輸入舊密碼</label>
+                        <input type="password" class="form-control" id="oldPassword">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">新密碼</label>
+                        <input type="password" class="form-control" id="newPassword">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">確認新密碼</label>
+                        <input type="password" class="form-control" id="confirmPassword">
+                    </div>
+                    <button type="submit" class="btn btn-primary">更新密碼</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 郵箱更新模態框 -->
+<div class="modal fade" id="emailModal" tabindex="-1" role="dialog" aria-labelledby="emailModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="emailModalLabel">更新郵箱</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="emailForm">
+                    <div class="form-group">
+                        <label for="email">新郵箱</label>
+                        <input type="email" class="form-control" id="email">
+                    </div>
+                    <button type="submit" class="btn btn-primary">更新郵箱</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container margin-b-lg">
+    <nav class="navbar navbar-expand-md navbar-light bg-light border-bottom">
+        <a id="navbar-brand" class="navbar-brand text-dark" href="#"></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#headerNavbar" aria-controls="headerNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="headerNavbar">
+            <ul class="navbar-nav ml-auto">
+
+                <!-- 下拉菜單 -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="updateDataMenu" role="button" data-toggle="dropdown" data-display="static" aria-haspopup="true" aria-expanded="false">
+                        修改資料
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="updateDataMenu">
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#passwordModal">密碼</a>
+                        <a class="dropdown-item" href="#" id="emailUpdate">郵箱</a>
+                    </div>
+                </li>
+                <!-- 添加文章按鈕 -->
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="addArticleButton"><i class="fa fa-plus-circle"></i> 新增文章</a>
+                </li>
+                <li class="nav-item"><a class="nav-link text-dark" href="blog.html">首頁</a></li>
+                <li class="nav-item"><a class="nav-link text-dark" href="article_display.html?editable=true">關於我</a></li>
+                <li class="nav-item">
+                    <a class="nav-link text-dark" href="#" onclick="logout(); return false;">登出</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+            <div class="article shadow-small">
+                <div class="article-header">
+                    <div class="article-actions">
+
+                        <!-- 按鈕將被動態插入這里 -->
+                    </div>
+                    <h2 class="article-title">文章標題</h2>
+                    <div class="article-meta">
+                        <span class="article-author">作者：</span>
+                        <span class="article-date">發布時間：</span>
+                    </div>
+                </div>
+                <div class="article-body">
+                    <p>這里是文章內容。這是示例文本，展示文章的結構和內容布局。</p>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 文章編輯模態框 -->
+        <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <form id="editArticleForm">
+                            <div class="form-group">
+                                <label for="articleTitle">文章標題</label>
+                                <input type="text" class="form-control" id="articleTitle">
+                            </div>
+                            <div class="form-group">
+                                <label for="articleSummary">摘要</label>
+                                <input type="text" class="form-control" id="articleSummary">
+                            </div>
+                            <div class="form-group">
+                                <label for="articleContent">文章內容</label>
+                                <textarea class="form-control" id="articleContent" rows="5"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+                        <button type="button" class="btn btn-primary" id="saveChanges">保存更改</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-sm-3">
+            <div class="bar shadow-small text-center">
+                <img src="" id="user-avatar" class="rounded-circle" alt="用戶頭像" style="width: 110px; margin-bottom: 10px;">
+
+                <!-- 上傳按鈕圖標 -->
+                <div id="upload-avatar-icon" style="cursor: pointer; display: none;">
+                    <i class="fa fa-upload"></i> 上傳頭像
+
+                </div>
+                <input type="file" id="avatarInput" style="display: none;" />
+                <!-- 隱藏的文件輸入 -->
+
+
+                <div class="author-info-name margin-tb-normal" id="username">用戶名</div>
+                <div>
+                    <span>文章數: </span><span id="num-of-articles">0</span>
+                </div>
+            </div>
+            <div class="bar shadow-small">
+                <h3 class="bar-title">個人文章</h3>
+                <ul class="bar-list" id="personal-articles">
+                    <!-- 這里的內容將通過JavaScript動態生成 -->
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // 點擊上傳圖標時，觸發隱藏的文件輸入點擊事件
+    $(document).ready(function() {
+        // 點擊上傳圖標時，觸發隱藏的文件輸入點擊事件
+        $('#upload-avatar-icon').off().click(function() {
+            console.log('Clicked!');
+            $('#avatarInput').click();
+        });
+
+        // 處理文件選擇後的事件
+        $('#avatarInput').off().change(function() {
+            if (this.files && this.files[0]) {
+                var formData = new FormData();
+                formData.append('avatar', this.files[0]);
+
+                $.ajax({
+                    url: '/users/upload/avatar',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,  // 告訴 jQuery 不要處理發送的數據
+                    contentType: false,  // 告訴 jQuery 不要設置內容類型
+                    success: function(response) {
+                        // 不管上傳成功還是失敗，直接刷新頁面
+                        window.location.reload();
+                    },
+                    error: function() {
+                        // 如果發生錯誤，也刷新頁面或進行錯誤處理
+                        alert('頭像上傳時發生錯誤');
+                        window.location.reload();
+                    }
+                });
+            }
+        });
+
+        // ...其他的 $(document).ready() 程式碼...
+    });
+</script>
+<script>
+    function logout() {
+        // 创建一个AJAX请求
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/users/logOut", true); // 假设登出的URL是 `/logout`
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        // 设置请求完成后的处理
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                // 请求成功后的处理，比如跳转到登录页或显示登出成功
+                console.log('Logged out successfully');
+                window.location.href = '/login'; // 重定向到登录页面
+            } else {
+                // 处理错误情况
+                console.error('Logout failed');
+            }
+        };
+
+        // 发送请求
+        xhr.send();
+    }
+</script>
+<footer class="container footer text-center">
+    <div class="row">
+        <div class="col-sm-12">
+            <p class="footer-copyright"></p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f0f0f0; }
+        .container { max-width: 300px; margin: 50px auto; padding: 20px; background: #fff; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        input, button {
+            width: calc(100% - 22px); /* 减去边框和内边距总和 */
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box; /* 确保边框和内边距包含在宽度内 */
+        }
+        button {
+            cursor: pointer;
+            background: #5cb85c;
+            color: white;
+        }
+        button:hover { opacity: 0.8; }
+        .btn-secondary { background: #f0ad4e; }
+        .btn-secondary:hover { background: #ec971f; }
+        .error { color: red; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>登錄</h2>
+    <div id="error-msg" class="error"></div>
+    <input type="text" id="username" placeholder="帳號" required>
+    <input type="password" id="password" placeholder="密碼" required>
+    <button id="login-btn">登入</button>
+    <button id="register-btn" class="btn-secondary">注冊</button>
+</div>
+
+
+<script>
+    document.getElementById('login-btn').addEventListener('click', function() {
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+        var errorMsg = document.getElementById('error-msg');
+
+        if (!username || !password) {
+            errorMsg.style.display = 'block';
+            errorMsg.textContent = '帳號和密碼不能為空。';
+            return;
+        }
+
+        errorMsg.style.display = 'none';
+
+        // 發送登錄請求
+        fetch('/users/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                username: username,
+                password: password
+            }).toString()
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 200) {
+                    window.location.href = 'blog.html'; // 登錄成功後的頁面
+                } else {
+                    errorMsg.style.display = 'block';
+                    errorMsg.textContent = data.message; // 顯示錯誤信息
+                }
+            })
+            .catch(error => {
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = '登錄失敗，請重試。';
+                console.error('Error:', error);
+            });
+    });
+
+    document.getElementById('register-btn').addEventListener('click', function() {
+        window.location.href = 'register.html'; // 跳轉到注冊頁面
+    });
+</script>
+
+</body>
+</html>
