@@ -26,7 +26,7 @@ public class ArticleServiceImp implements ArticleService {
     public Map<String, Object> getAllList(Integer pageNum) {
         Integer articleCount =  articleMapper.getAllCount();
         if (pageNum == null || pageNum < 1) {
-            pageNum = 1;  // 如果 pageNum 为 null 或无效，则默认为第一页
+            pageNum = 1;  // 如果 pageNum 為 null 或無效，则默認為第一頁
         }
         if(articleCount == null){
             throw new SelectException();
